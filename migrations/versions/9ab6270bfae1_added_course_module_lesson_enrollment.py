@@ -38,7 +38,6 @@ def upgrade() -> None:
             nullable=False,
         ),
         sa.Column("image_url", sqlmodel.sql.sqltypes.AutoString(), nullable=True),
-        sa.Column("price", sa.Float(), nullable=False),
         sa.Column("created_at", sa.DateTime(), nullable=False),
         sa.Column("updated_at", sa.DateTime(), nullable=False),
         sa.ForeignKeyConstraint(

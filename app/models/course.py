@@ -15,7 +15,6 @@ class Course(SQLModel, table=True):
     description: str = Field(max_length=1000)
     status: CourseStatus = Field(default=CourseStatus.DRAFT)
     image_url: str | None = Field(default=None)
-    price: float = Field(default=0.0)
     created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
     updated_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
 
