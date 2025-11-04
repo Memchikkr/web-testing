@@ -1,0 +1,25 @@
+[project]
+name = "web-testing"
+version = "0.1.0"
+description = ""
+authors = [
+    {name = "Mihail",email = "Misha200417@gmail.com"}
+]
+readme = "README.md"
+requires-python = ">=3.12, <4.0"
+dependencies = [
+    "fastapi (>=0.116.1,<0.117.0)",
+    "dotenv (>=0.9.9,<0.10.0)",
+    "pydantic-settings (>=2.10.1,<3.0.0)",
+    "sqlmodel (>=0.0.24,<0.0.25)",
+    "jwt (>=1.4.0,<2.0.0)",
+    "alembic (>=1.16.4,<2.0.0)",
+    "uvicorn (>=0.35.0,<0.36.0)",
+    "asyncmy (>=0.2.10,<0.3.0)",
+    "pydantic[email] (>=2.11.7,<3.0.0)",
+]
+
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"

@@ -1,0 +1,21 @@
+services:
+  mysql:
+    image: mariadb:latest
+    env_file:
+      - .env
+    ports:
+      - 127.0.0.1:3306:3306
+    volumes:
+      - ./docker/mysql/data:/var/lib/mysql
+
+  pma:
+    image: phpmyadmin/phpmyadmin:latest
+    links:
+      - mysql
+    environment:
+      PMA_HOST: mysql
+      UPLOAD_LIMIT: 5M
+    ports:
+      - 127.0.0.1:57088:80
+    depends_on:
+      - mysql
