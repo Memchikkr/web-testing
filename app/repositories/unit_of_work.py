@@ -3,6 +3,10 @@ from abc import ABC, abstractmethod
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from app.repositories.answer import AnswerRepository
+from app.repositories.course import CourseRepository
+from app.repositories.enrollment import EnrollmentRepository
+from app.repositories.lesson import LessonRepository
+from app.repositories.module import ModuleRepository
 from app.repositories.question import QuestionRepository
 from app.repositories.result import ResultRepository
 from app.repositories.testing import TestRepository
@@ -89,3 +93,27 @@ class SQLAlchemyUnitOfWork(IUnitOfWork):
         if not hasattr(self, "_user_answers"):
             self._user_answers = UserAnswerRepository(self.session)
         return self._user_answers
+
+    @property
+    def courses(self):
+        if not hasattr(self, "_courses"):
+            self._courses = CourseRepository(self.session)
+        return self._courses
+
+    @property
+    def modules(self):
+        if not hasattr(self, "_modules"):
+            self._modules = ModuleRepository(self.session)
+        return self._modules
+
+    @property
+    def lessons(self):
+        if not hasattr(self, "_lessons"):
+            self._lessons = LessonRepository(self.session)
+        return self._lessons
+
+    @property
+    def enrollments(self):
+        if not hasattr(self, "_enrollments"):
+            self._enrollments = EnrollmentRepository(self.session)
+        return self._enrollments
