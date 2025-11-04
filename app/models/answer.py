@@ -2,8 +2,6 @@ from typing import Optional
 
 from sqlmodel import Field, Relationship, SQLModel
 
-from app.models.question import Question
-
 
 class Answer(SQLModel, table=True):
     __tablename__ = "answer"
@@ -12,4 +10,4 @@ class Answer(SQLModel, table=True):
     question_id: int = Field(foreign_key="question.id")
     answer_text: str = Field()
 
-    question: Optional[Question] = Relationship(back_populates="answer")
+    question: Optional["Question"] = Relationship(back_populates="answer")  # type: ignore # noqa: F821

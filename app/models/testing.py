@@ -3,8 +3,6 @@ from typing import List, Optional
 
 from sqlmodel import Field, Relationship, SQLModel
 
-from app.models.question import Question
-
 
 class Test(SQLModel, table=True):
     __tablename__ = "test"
@@ -17,5 +15,5 @@ class Test(SQLModel, table=True):
     created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
 
     user: Optional["User"] = Relationship(back_populates="tests")  # type: ignore # noqa: F821
-    questions: List[Question] = Relationship(back_populates="test")
+    questions: List["Question"] = Relationship(back_populates="test")  # type: ignore # noqa: F821
     results: List["Result"] = Relationship(back_populates="test")  # type: ignore # noqa: F821

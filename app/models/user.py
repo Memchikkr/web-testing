@@ -3,9 +3,6 @@ from typing import List, Optional
 
 from sqlmodel import Column, Enum, Field, LargeBinary, Relationship, SQLModel
 
-from app.models.result import Result
-from app.models.testing import Test
-from app.models.answer import Answer
 from app.utils.types import Role
 
 
@@ -21,8 +18,10 @@ class User(SQLModel, table=True):
     last_name: str = Field()
     created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
 
-    tests: List[Test] = Relationship(back_populates="user")
-    results: List[Result] = Relationship(back_populates="user")
+    tests: List["Test"] = Relationship(back_populates="user")  # type: ignore # noqa: F821
+    results: List["Result"] = Relationship(back_populates="user")  # type: ignore # noqa: F821
+    enrollments: List["Enrollment"] = Relationship(back_populates="user")  # type: ignore # noqa: F821
+    courses: List["Course"] = Relationship(back_populates="user")  # type: ignore # noqa: F821
 
 
 class UserAnswer(SQLModel, table=True):
@@ -34,6 +33,6 @@ class UserAnswer(SQLModel, table=True):
     answer_text: str = Field()
     is_correct: bool = Field()
 
-    result: Optional[Result] = Relationship(back_populates="answers")
+    result: Optional["Result"] = Relationship(back_populates="answers")  # type: ignore # noqa: F821
     question: Optional["Question"] = Relationship()  # type: ignore # noqa: F821
-    answer: Optional[Answer] = Relationship()  # type: ignore # noqa: F821
+    answer: Optional["Answer"] = Relationship()  # type: ignore # noqa: F821
