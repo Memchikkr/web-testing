@@ -3,10 +3,9 @@ from typing import Annotated, List
 from fastapi import APIRouter, Depends, HTTPException, Path
 
 from app.bearer import AccessController
+from app.depends.uow import get_uow
 from app.models.testing import Test
 from app.models.user import User
-from app.repositories import get_uow
-from app.repositories.testing import TestRepository
 from app.repositories.unit_of_work import SQLAlchemyUnitOfWork
 from app.schemas.tests import TestBase, TestCreateRequest, TestWithQuestionsAndAnswers
 from app.utils.types import Role
@@ -25,9 +24,8 @@ async def create_test(
     uow: SQLAlchemyUnitOfWork = Depends(get_uow),
 ):
     try:
-        rep = TestRepository(uow.session)
         test = Test(creator_id=current_user.id, **request.model_dump())
-        rep.add(test)
+        uow.tests.add(test)
         await uow.commit()
         return test
     except Exception:
@@ -42,8 +40,7 @@ async def get_my_tests(
     uow: SQLAlchemyUnitOfWork = Depends(get_uow),
 ):
     try:
-        rep = TestRepository(uow.session)
-        tests = await rep.get_all_by_conditions(creator_id=current_user.id)
+        tests = await uow.tests.get_all_by_conditions(creator_id=current_user.id)
         return tests
     except Exception:
         raise HTTPException(
@@ -57,8 +54,7 @@ async def get_my_test(
     test_id: int = Path(ge=1),
     uow: SQLAlchemyUnitOfWork = Depends(get_uow),
 ):
-    rep = TestRepository(uow.session)
-    test = await rep.get_test_with_questions_and_answers(
+    test = await uow.tests.get_test_with_questions_and_answers(
         id=test_id, creator_id=current_user.id
     )
     if not test:

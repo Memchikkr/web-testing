@@ -3,13 +3,9 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException, Path
 
 from app.bearer import AccessController
+from app.depends.uow import get_uow
 from app.models.user import User, UserAnswer
-from app.repositories import get_uow
-from app.repositories.answer import AnswerRepository
-from app.repositories.question import QuestionRepository
-from app.repositories.result import ResultRepository
 from app.repositories.unit_of_work import SQLAlchemyUnitOfWork
-from app.repositories.user import UserAnswerRepository
 from app.schemas.users import UserAnswerRequest, UserAnswerShort
 
 router = APIRouter(
@@ -26,23 +22,21 @@ async def save_answer(
     result_id: int = Path(ge=1),
     uow: SQLAlchemyUnitOfWork = Depends(get_uow),
 ):
-    res_rep = ResultRepository(uow.session)
-    result = await res_rep.get(id=result_id, user_id=current_user.id)
+    result = await uow.results.get(id=result_id, user_id=current_user.id)
     if not result:
         raise HTTPException(status_code=404, detail="Запись о результатах не найдена")
     if result.finished_at is not None:
         raise HTTPException(status_code=403, detail="Прохождение теста завершено")
 
-    rep = UserAnswerRepository(uow.session)
-    user_answer = await rep.get(result_id=result_id, question_id=request.question_id)
+    user_answer = await uow.user_answers.get(
+        result_id=result_id, question_id=request.question_id
+    )
 
-    q_rep = QuestionRepository(uow.session)
-    question = await q_rep.get(test_id=result.test_id, id=request.question_id)
+    question = await uow.questions.get(test_id=result.test_id, id=request.question_id)
     if not question:
         raise HTTPException(status_code=404, detail="Вопрос не найден")
 
-    answ_rep = AnswerRepository(uow.session)
-    answer = await answ_rep.get(question_id=question.id)
+    answer = await uow.answers.get(question_id=question.id)
     if not answer:
         raise HTTPException(status_code=404, detail="Ответа на данный вопрос нет")
     score = result.score if result.score else 0
@@ -59,11 +53,11 @@ async def save_answer(
                 if is_correct is True
                 else result.score - question.points
             )
-        await res_rep.update(
+        await uow.results.update(
             {"score": score},
             id=result.id,
         )
-        await rep.update(
+        await uow.user_answers.update(
             {"is_correct": is_correct, "answer_text": request.answer_text},
             result_id=user_answer.result_id,
             question_id=user_answer.question_id,
@@ -74,11 +68,11 @@ async def save_answer(
         result_id=result_id,
         answer_id=answer.id,
         is_correct=is_correct,
-        **request.model_dump()
+        **request.model_dump(),
     )
     try:
-        rep.add(user_answer)
-        await res_rep.update(
+        uow.user_answers.add(user_answer)
+        await uow.results.update(
             {"score": score},
             id=result.id,
         )

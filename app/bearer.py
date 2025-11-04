@@ -3,11 +3,10 @@ from typing import Annotated, List
 from fastapi import Depends, HTTPException
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
+from app.depends.uow import get_uow
 from app.exceptions.exceptions import InvalidTokenError
 from app.models.user import User
-from app.repositories import get_uow
 from app.repositories.unit_of_work import SQLAlchemyUnitOfWork
-from app.repositories.user import UserRepository
 from app.services.auth import decode_access_token
 from app.utils.types import Role
 
@@ -24,8 +23,7 @@ async def get_current_user(
         decoded_token = decode_access_token(credentials.credentials)
         if not decoded_token:
             raise InvalidTokenError
-        rep = UserRepository(session=uow.session)
-        user = await rep.get(id=decoded_token["user_id"])
+        user = await uow.users.get(id=decoded_token["user_id"])
         if not user:
             raise InvalidTokenError
         return user

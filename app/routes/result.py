@@ -1,13 +1,11 @@
 from datetime import UTC, datetime, timedelta
 from typing import Annotated, List
 
-from fastapi import APIRouter, Depends, HTTPException, Path, Query
+from fastapi import APIRouter, Depends, HTTPException, Path
 
 from app.bearer import AccessController
+from app.depends.uow import get_uow
 from app.models.user import Result, User
-from app.repositories import get_uow
-from app.repositories.result import ResultRepository
-from app.repositories.testing import TestRepository
 from app.repositories.unit_of_work import SQLAlchemyUnitOfWork
 from app.schemas.results import ResultBase, ResultWithTest, ResultWithTestAndAnswers
 
@@ -24,14 +22,12 @@ async def start_test(
     test_id: int = Path(ge=1),
     uow: SQLAlchemyUnitOfWork = Depends(get_uow),
 ):
-    test_rep = TestRepository(uow.session)
-    test = await test_rep.get_test_with_questions(id=test_id)
+    test = await uow.tests.get_test_with_questions(id=test_id)
     if not test:
         raise HTTPException(status_code=422, detail="Тест не найден")
-    rep = ResultRepository(uow.session)
     result = Result(user_id=current_user.id, test_id=test_id)
     try:
-        rep.add(result)
+        uow.results.add(result)
         await uow.commit()
         return result
     except Exception:
@@ -46,23 +42,21 @@ async def finish_test(
     result_id: int = Path(ge=1),
     uow: SQLAlchemyUnitOfWork = Depends(get_uow),
 ):
-    rep = ResultRepository(uow.session)
-    result = await rep.get_result_with_test_and_answers(
+    result = await uow.results.get_result_with_test_and_answers(
         id=result_id, user_id=current_user.id
     )
     if not result:
         raise HTTPException(status_code=422, detail="Результат не найден")
     if result.finished_at:
         raise HTTPException(status_code=409, detail="Тест уже завершён")
-    test_rep = TestRepository(uow.session)
-    test = await test_rep.get(id=result.test_id)
+    test = await uow.tests.get(id=result.test_id)
     if not test:
         raise HTTPException(status_code=422, detail="Тест не найден")
     now = datetime.now(UTC).replace(tzinfo=None)
     values = {"finished_at": now}
     if now - result.started_at > timedelta(minutes=test.time_limit_minutes):
         values["score"] = 0
-    await rep.update(values, id=result_id)
+    await uow.results.update(values, id=result_id)
     await uow.commit()
     return result
 
@@ -73,8 +67,7 @@ async def get_result(
     result_id: int = Path(ge=1),
     uow: SQLAlchemyUnitOfWork = Depends(get_uow),
 ):
-    rep = ResultRepository(uow.session)
-    result = await rep.get_result_with_test_and_answers(
+    result = await uow.results.get_result_with_test_and_answers(
         id=result_id, user_id=current_user.id
     )
     if not result:
@@ -87,6 +80,5 @@ async def get_results(
     current_user: Annotated[User, Depends(AccessController().get_access)],
     uow: SQLAlchemyUnitOfWork = Depends(get_uow),
 ):
-    rep = ResultRepository(uow.session)
-    results = await rep.get_results_with_tests(user_id=current_user.id)
+    results = await uow.results.get_results_with_tests(user_id=current_user.id)
     return results

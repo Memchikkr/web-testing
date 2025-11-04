@@ -3,9 +3,8 @@ from typing import Annotated, List
 from fastapi import APIRouter, Depends, HTTPException, Path, Query
 
 from app.bearer import AccessController
+from app.depends.uow import get_uow
 from app.models.user import User
-from app.repositories import get_uow
-from app.repositories.testing import TestRepository
 from app.repositories.unit_of_work import SQLAlchemyUnitOfWork
 from app.schemas.tests import TestBase, TestWithQuestions
 
@@ -22,8 +21,7 @@ async def get_test(
     test_id: int = Path(ge=1),
     uow: SQLAlchemyUnitOfWork = Depends(get_uow),
 ):
-    rep = TestRepository(uow.session)
-    test = await rep.get_test_with_questions(id=test_id)
+    test = await uow.tests.get_test_with_questions(id=test_id)
     if not test:
         raise HTTPException(status_code=404, detail="Тест не найден")
     return test
@@ -36,8 +34,7 @@ async def get_tests(
     uow: SQLAlchemyUnitOfWork = Depends(get_uow),
 ):
     try:
-        rep = TestRepository(uow.session)
-        tests = await rep.search_tests(filter=filter)
+        tests = await uow.tests.search_tests(filter=filter)
         return tests
     except Exception:
         raise HTTPException(
